@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Image Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #424242;
+            --primary-light: #616161;
+            --primary-dark: #212121;
+            --secondary: #757575;
+            --accent: #9E9E9E;
+            --dark: #121212;
+            --light: #f5f5f5;
+            --gray: #2d2d2d;
+            --error: #CF6679;
+            
+            --font-main: 'Quicksand', sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+            background-color: var(--dark);
+            color: var(--light);
+            line-height: 1.6;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .header-content {
+            height: 40px;
+            width: 400px;
+        }
+
+
+        h1 {
+            color: var(--light);
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .generator-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--primary-dark);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid var(--gray);
+        }
+
+        .image-display {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(33, 33, 33, 0.8);
+            position: relative;
+        }
+
+        .generated-image {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 12px;
+            border: 1px solid var(--gray);
+            display: none;
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+
+        .generated-image:hover {
+            transform: scale(1.02);
+        }
+
+        .placeholder {
+            text-align: center;
+            color: var(--accent);
+            font-size: 1.2em;
+            padding: 20px;
+        }
+
+        /* Image Preview Modal */
+        .image-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-preview-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 8px;
+        }
+
+        .close-preview {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        .input-area {
+            padding: 15px;
+            background-color: var(--primary-dark);
+            border-top: 1px solid var(--gray);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .text-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid var(--gray);
+            border-radius: 16px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+            font-family: var(--font-main);
+            background-color: var(--primary);
+            color: var(--light);
+        }
+
+        .text-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(158, 158, 158, 0.1);
+        }
+
+        .generate-button {
+            padding: 14px 22px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .generate-button:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-1px);
+        }
+
+        .generate-button svg {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+
+        .loading-indicator {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .loading-bar-container {
+            width: 80%;
+            height: 6px;
+            background-color: var(--primary);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent);
+            border-radius: 3px;
+            transition: width 0.5s linear;
+        }
+
+        .loading-info {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        .time-estimate {
+            color: var(--secondary);
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .generation-time {
+            color: var(--accent);
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .download-button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .download-button:hover {
+            background-color: var(--primary-light);
+        }
+
+        .download-button svg {
+            width: 14px;
+            height: 14px;
+            fill: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .generated-image {
+                max-height: 50vh;
+            }
+            
+            .input-area {
+                padding: 12px;
+            }
+            
+            .text-input {
+                padding: 12px 16px;
+            }
+            
+            .generate-button {
+                padding: 12px 18px;
+            }
+            
+            .close-preview {
+                top: -50px;
+                right: -10px;
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Rae'Vision</h1>
+            </div>
+        </header>
+        
+        <div class="generator-container">
+            <div class="image-display" id="image-display">
+                <div class="placeholder">
+                    Describe the image you want to generate...
+                </div>
+                <img id="generated-image" class="generated-image" alt="Generated image">
+                <div class="loading-indicator" id="loading-indicator">
+                    <div class="loading-text">Generating your image...</div>
+                    <div class="loading-bar-container">
+                        <div class="loading-bar" id="loading-bar"></div>
+                    </div>
+                    <div class="loading-info">
+                        <span id="progress-text">0%</span>
+                        <span id="time-elapsed">0s</span>
+                    </div>
+                    <div class="time-estimate" id="time-estimate">Estimated time remaining: 25 seconds</div>
+                </div>
+                <div class="generation-time" id="generation-time">
+                    Generated in <span id="time-taken">0</span> seconds
+                </div>
+                <button id="download-button" class="download-button">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    Download Image
+                </button>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" class="text-input" id="prompt-input" placeholder="Describe the image you want to generate..." autocomplete="off">
+                
+                <button class="generate-button" id="generate-button">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 4v3h5v12h3V7h5V4H9zm-6 8h3v7h3v-7h3V9H3v3z"/>
+                    </svg>
+                    Generate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div class="image-preview-modal" id="image-preview-modal">
+        <div class="image-preview-content">
+            <button class="close-preview" id="close-preview">&times;</button>
+            <img id="preview-image" class="preview-image" alt="Preview">
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "a0ac725a1b6543b6af3ad16a2cc90b0c";
+        const API_URL = "https://api.netmind.ai/inference-api/openai/v1/images/generations";
+        const TARGET_DURATION = 25000; // 25 seconds in milliseconds
+        const MIN_DURATION = 24000;    // 24 seconds
+        const MAX_DURATION = 26000;    // 26 seconds
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const promptInput = document.getElementById('prompt-input');
+            const generateButton = document.getElementById('generate-button');
+            const generatedImage = document.getElementById('generated-image');
+            const placeholder = document.querySelector('.placeholder');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const loadingBar = document.getElementById('loading-bar');
+            const progressText = document.getElementById('progress-text');
+            const timeElapsed = document.getElementById('time-elapsed');
+            const timeEstimate = document.getElementById('time-estimate');
+            const generationTime = document.getElementById('generation-time');
+            const timeTaken = document.getElementById('time-taken');
+            const downloadButton = document.getElementById('download-button');
+            const previewModal = document.getElementById('image-preview-modal');
+            const previewImage = document.getElementById('preview-image');
+            const closePreview = document.getElementById('close-preview');
+            
+            let startTime;
+            let progressInterval;
+            let timeInterval;
+            
+            generateButton.addEventListener('click', generateImage);
+            promptInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateImage();
+                }
+            });
+            
+            downloadButton.addEventListener('click', downloadImage);
+            
+            // Image preview functionality
+            generatedImage.addEventListener('click', openPreview);
+            closePreview.addEventListener('click', closePreviewModal);
+            previewModal.addEventListener('click', function(e) {
+                if (e.target === previewModal) {
+                    closePreviewModal();
+                }
+            });
+            
+            function openPreview() {
+                if (!generatedImage.src) return;
+                previewImage.src = generatedImage.src;
+                previewModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function closePreviewModal() {
+                previewModal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+            
+            async function generateImage() {
+                const prompt = promptInput.value.trim();
+                
+                if (!prompt) {
+                    alert("Please enter a description for the image");
+                    return;
+                }
+                
+                // Clear the input field
+                promptInput.value = '';
+                
+                // Show loading state
+                placeholder.style.display = 'none';
+                generatedImage.style.display = 'none';
+                loadingIndicator.style.display = 'flex';
+                downloadButton.style.display = 'none';
+                generationTime.style.display = 'none';
+                
+                // Reset loading bar
+                loadingBar.style.width = '0%';
+                progressText.textContent = '0%';
+                timeElapsed.textContent = '0s';
+                timeEstimate.textContent = 'Estimated time remaining: 25 seconds';
+                
+                // Start timing
+                startTime = Date.now();
+                
+                // Start progress animation targeting 25 seconds
+                progressInterval = setInterval(updateProgress, 100);
+                
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`
+                        },
+                        body: JSON.stringify({
+                            model: "stabilityai/stable-diffusion-3.5-large",
+                            prompt: prompt,
+                            response_format: "b64_json"
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    const endTime = Date.now();
+                    const actualDuration = endTime - startTime;
+                    
+                    // Complete the loading bar
+                    loadingBar.style.width = '100%';
+                    progressText.textContent = '100%';
+                    clearInterval(progressInterval);
+                    
+                    if (data.data && data.data[0] && data.data[0].b64_json) {
+                        generatedImage.src = `data:image/png;base64,${data.data[0].b64_json}`;
+                        generatedImage.style.display = 'block';
+                        downloadButton.style.display = 'flex';
+                        
+                        // Store the base64 data and prompt for download
+                        generatedImage.dataset.base64 = data.data[0].b64_json;
+                        generatedImage.dataset.prompt = prompt;
+                        
+                        // Show generation time
+                        const seconds = (actualDuration / 1000).toFixed(1);
+                        timeTaken.textContent = seconds;
+                        generationTime.style.display = 'block';
+                    } else {
+                        throw new Error("No image data received");
+                    }
+                } catch (error) {
+                    console.error("Error generating image:", error);
+                    placeholder.textContent = "Error generating image. Please try again.";
+                    placeholder.style.display = 'block';
+                    clearInterval(progressInterval);
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+            
+            function updateProgress() {
+                const currentTime = Date.now();
+                const elapsed = currentTime - startTime;
+                let progress = Math.min((elapsed / TARGET_DURATION) * 100, 100);
+                
+                // Add some randomness to make it feel more natural
+                if (progress < 90) {
+                    progress += Math.random() * 2 - 1; // ±1% randomness
+                    progress = Math.max(0, Math.min(progress, 89));
+                }
+                
+                loadingBar.style.width = `${progress}%`;
+                progressText.textContent = `${Math.floor(progress)}%`;
+                
+                // Update elapsed time display
+                const seconds = Math.floor(elapsed / 1000);
+                timeElapsed.textContent = `${seconds}s`;
+                
+                // Update time estimate
+                const remaining = Math.max(0, Math.floor((TARGET_DURATION - elapsed) / 1000));
+                timeEstimate.textContent = `Estimated time remaining: ${remaining} seconds`;
+            }
+            
+            function downloadImage() {
+                if (!generatedImage.dataset.base64) return;
+                
+                // Get first 5 words of the prompt
+                const promptWords = generatedImage.dataset.prompt.split(/\s+/);
+                const firstFiveWords = promptWords.slice(0, 5).join(' ');
+                
+                // Create a safe filename
+                let filename = firstFiveWords.toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+                    .replace(/\s+/g, '-')       // Replace spaces with dashes
+                    .replace(/-+/g, '-')         // Remove consecutive dashes
+                    .replace(/^-+|-+$/g, '');    // Remove leading/trailing dashes
+                
+                // Ensure filename is not empty
+                if (!filename) filename = 'ai-generated-image';
+                
+                const link = document.createElement('a');
+                link.href = `data:image/png;base64,${generatedImage.dataset.base64}`;
+                link.download = `${filename}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+    </script>
+</body>
+</html>
