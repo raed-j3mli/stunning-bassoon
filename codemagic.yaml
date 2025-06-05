@@ -6,7 +6,7 @@ workflows:
       ruby: 3.2.2
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: npm install --legacy-peer-deps
       - name: Build APK
         script: |
           cd android
