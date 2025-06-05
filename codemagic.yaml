@@ -3,7 +3,7 @@ workflows:
     name: React Native Android Build
     environment:
       node: latest
-      ruby: latest
+      ruby: 3.2.2
     scripts:
       - name: Install dependencies
         script: npm install
